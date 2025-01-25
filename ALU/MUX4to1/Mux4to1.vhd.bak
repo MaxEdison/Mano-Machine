@@ -1,0 +1,33 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.all;
+use IEEE.numeric_std.all;
+
+entity mux_4to1 is
+ port(
+
+	CLK :in STD_LOGIC;
+    I : in STD_LOGIC_vector(3 downto 0);
+    S: in STD_LOGIC_vector(1 downto 0);
+    Z: out STD_LOGIC
+	
+  );
+end mux_4to1;
+
+architecture bhv of mux_4to1 is
+begin
+process (CLK) is
+	begin
+	if (rising_edge(CLK) then 
+		if (S = '00') then
+			Z <= I(0);
+		elsif (S = '01') then
+			Z <= I(1);
+		elsif (S = '10') then
+			Z <= I(2);
+		else
+			Z <= I(3);
+		end if;
+	end if;
+	
+end process;
+end bhv;
