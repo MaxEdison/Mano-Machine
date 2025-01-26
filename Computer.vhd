@@ -18,6 +18,7 @@ architecture bhv of Main is
     signal FGI  : std_logic := '0';
     signal FGO  : std_logic := '0';
     signal IEN  : std_logic := '0';
+	signal mem_write_en : std_logic := '0';
     signal IR   : std_logic_vector(15 downto 0) := (others => '0');
     signal TR   : std_logic_vector(15 downto 0) := (others => '0');
     signal output : std_logic_vector(7 downto 0) := (others => '0');
@@ -26,7 +27,10 @@ architecture bhv of Main is
     signal DR   : std_logic_vector(15 downto 0) := (others => '0');
     signal AC   : std_logic_vector(15 downto 0) := (others => '0');
     signal temp_bus : std_logic_vector(15 downto 0) := (others => '0');
-    signal temp_mem : std_logic_vector(15 downto 0) := (others => '0');
+	signal mem_address  : std_logic_vector(11 downto 0) := (others => '0');
+	signal mem_data_in  : std_logic_vector(15 downto 0) := (others => '0'); 
+	signal mem_data_out : std_logic_vector(15 downto 0) := (others => '0'); 
+	signal temp_mem : std_logic_vector(15 downto 0) := (others => '0'); 
 
     component Comm_bus is 
         port(
@@ -240,6 +244,15 @@ begin
         Out_out => output
     );
     
+	Memory_inst : entity work.Memory
+    port map (
+        CLK      => CLK,
+        write_en => mem_write_en,
+        address  => mem_address,
+        data_in  => mem_data_in,
+        data_out => mem_data_out
+    );
+	
     com_bus : Comm_bus port map (
         input_0 => (others => '0'),
         input_1(11 downto 0) => AR,
@@ -250,7 +263,7 @@ begin
         input_4 => AC,
         input_5 => IR,
         input_6 => TR,
-        input_7 => temp_mem,
+        input_7 => mem_data_out,
         output => temp_bus,
         CLK => CLK,
         DD => D,
@@ -280,6 +293,18 @@ begin
                 AR <= IR(11 downto 0);
                 I <= IR(15);
             end if;
+			if (R = '1' and T(1)= '1') or (D(3) = '1' and T(4) = '1') or (D(6) = '1' and T(6) = '1') then
+				mem_write_en <= '1';
+				mem_address <= AR;
+				mem_data_in <= DR;
+			else
+				mem_write_en <= '0'; 
+			end if;
+			if (not R = '1' and T(1) = '1') or (not D(2) = '1' and I = '1' and T(3) = '1') or 
+                  (D(0) = '1' and (T(4) = '1' or T(1) = '1')) or (T(4) = '1' and (D(2) = '1' or D(6) = '1')) then 
+				mem_address <= AR; 
+				temp_mem <= mem_data_out; 
+			end if;
             if (D(7)='1' and not(I)='1' and T(3)='1' and IR(10)='1') then 
                 E <= '0';
             elsif (D(7)='1' and not(I)='1' and T(3)='1' and IR(8)='1') then 
